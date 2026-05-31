@@ -1,129 +1,72 @@
-import { useMemo, useState } from "react";
-import { QuestionItem } from "./components/QuestionItem";
+import { useState } from "react";
+import { LayoutGrouped } from "./components/LayoutGrouped";
+import { LayoutMixed } from "./components/LayoutMixed";
+import { ScenarioPicker } from "./components/ScenarioPicker";
 import { TraceTable } from "./components/TraceTable";
-import { ANALYZERS, type AnalysisResult } from "./inference/analyzers";
-import { FLAT_QUESTIONS } from "./knowledge/layout";
-import {
-  QUESTIONS,
-  SCENARIOS,
-  SCENARIO_DESCRIPTIONS,
-  type ScenarioName,
-} from "./knowledge/questions";
+import { useExpertSession } from "./hooks/useExpertSession";
 import styles from "./App.module.css";
 
-type AnswersByScenario = Record<ScenarioName, Record<string, string>>;
+type Mode = "mixed" | "grouped";
 
-const emptyAnswers = (): AnswersByScenario => ({
-  "Пешеходный переход": {},
-  "Перекрёсток": {},
-  "Перестроение": {},
-});
+const MODE_LABELS: Record<Mode, string> = {
+  mixed: "Семантический порядок",
+  grouped: "По сценариям",
+};
 
 export function App() {
-  const [chosen, setChosen] = useState<ScenarioName | null>(null);
-  const [answers, setAnswers] = useState<AnswersByScenario>(emptyAnswers);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-
-  const isComplete = useMemo(() => {
-    if (!chosen) return false;
-    const scenarioAnswers = answers[chosen];
-    return QUESTIONS[chosen].every((q) => Boolean(scenarioAnswers[q.key]));
-  }, [chosen, answers]);
-
-  const handleScenarioChange = (next: ScenarioName) => {
-    setChosen(next);
-    setResult(null);
-    setAnswers(emptyAnswers);
-  };
-
-  const handleAnswerChange = (
-    scenario: ScenarioName,
-    questionKey: string,
-    label: string,
-  ) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [scenario]: { ...prev[scenario], [questionKey]: label },
-    }));
-  };
-
-  const collectedFacts = useMemo(() => {
-    if (!chosen) return [];
-    const facts: string[] = [];
-    for (const question of QUESTIONS[chosen]) {
-      const selected = answers[chosen][question.key];
-      if (!selected) continue;
-      const option = question.options.find((o) => o.label === selected);
-      if (option?.fact) facts.push(option.fact);
-    }
-    return facts;
-  }, [chosen, answers]);
-
-  const handleExplain = () => {
-    if (!chosen) return;
-    setResult(ANALYZERS[chosen](collectedFacts));
-  };
+  const [mode, setMode] = useState<Mode>("grouped");
+  const session = useExpertSession();
 
   return (
     <div className={styles.app}>
-      <h1 className={styles.title}>Экспертная система «Умный автомобиль»</h1>
-
-      <section className={styles.scenarios}>
-        <div className={styles.scenariosLegend}>
-          Выберите дорожную ситуацию
-        </div>
-        <div className={styles.scenariosRow}>
-          {SCENARIOS.map((scenario) => (
-            <label
-              key={scenario}
-              className={styles.scenarioRadio}
-              title={SCENARIO_DESCRIPTIONS[scenario]}
+      <header className={styles.header}>
+        <h1 className={styles.title}>Экспертная система «Умный автомобиль»</h1>
+        <div className={styles.modeSwitch} role="tablist" aria-label="Раскладка">
+          {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={mode === m}
+              className={`${styles.modeButton} ${mode === m ? styles.modeButtonActive : ""}`}
+              onClick={() => setMode(m)}
             >
-              <input
-                type="radio"
-                name="scenario"
-                value={scenario}
-                checked={chosen === scenario}
-                onChange={() => handleScenarioChange(scenario)}
-              />
-              <span>{scenario}</span>
-            </label>
+              {MODE_LABELS[m]}
+            </button>
           ))}
         </div>
-      </section>
+      </header>
 
-      <section className={styles.questionsArea}>
-        <div className={styles.questionsLegend}>Ответьте на вопросы</div>
-        <div className={styles.questionsFlow}>
-          {FLAT_QUESTIONS.map((item, idx) => {
-            const active = chosen === item.scenario;
-            const selected = answers[item.scenario][item.question.key];
-            return (
-              <QuestionItem
-                key={item.uid}
-                item={item}
-                index={idx}
-                active={active}
-                selected={selected}
-                onChange={(label) =>
-                  handleAnswerChange(item.scenario, item.question.key, label)
-                }
-              />
-            );
-          })}
-        </div>
-      </section>
+      <ScenarioPicker chosen={session.chosen} onChange={session.selectScenario} />
+
+      {mode === "grouped" ? (
+        <LayoutGrouped
+          chosen={session.chosen}
+          answers={session.answers}
+          onAnswer={session.setAnswer}
+        />
+      ) : (
+        <LayoutMixed
+          chosen={session.chosen}
+          answers={session.answers}
+          onAnswer={session.setAnswer}
+        />
+      )}
 
       <button
         type="button"
         className={styles.explainButton}
-        onClick={handleExplain}
-        disabled={!isComplete}
+        onClick={session.runExplain}
+        disabled={!session.isComplete}
       >
         Показать объяснение
       </button>
 
-      <TraceTable scenario={chosen} facts={collectedFacts} result={result} />
+      <TraceTable
+        scenario={session.chosen}
+        facts={session.collectedFacts}
+        result={session.result}
+      />
     </div>
   );
 }

@@ -1,0 +1,47 @@
+.area {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  padding: 22px 16px 16px;
+  margin-bottom: 18px;
+}
+
+.legend {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  background: var(--color-surface);
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Вопросы текут одним вертикальным потоком; между блоками сценариев
+   стоит .gap, который рвёт колонку — visually это видно как отступ,
+   но никакие подписи блоков не отображаются. */
+.flow {
+  column-count: 3;
+  column-gap: 28px;
+}
+
+@media (max-width: 900px) {
+  .flow {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .flow {
+    column-count: 1;
+  }
+}
+
+/* «Разрыв колонки» — заставляет следующий блок начинаться с новой
+   колонки. Это и даёт визуальное разделение без заголовков. */
+.gap {
+  height: 0;
+  break-after: column;
+  -webkit-column-break-after: always;
+  page-break-after: always;
+}
