@@ -1,25 +1,22 @@
-import { QUESTIONS, SCENARIOS } from "./questions";
+import { QUESTIONS, SCENARIOS, type ScenarioName } from "./questions";
 import type { FlatQuestion } from "./layout";
 
 /**
  * Раскладка v2: вопросы идут блоками по сценариям, но без заголовков
- * и рамок. Внутри блока — естественный порядок исходного сценария
- * (тип → детализация → дистанции/скорость).
- *
- * Между блоками вставляется логический «разрыв» — он используется
- * вьюхой для визуального промежутка (но НЕ для подписи, к какому
- * сценарию относится блок).
+ * и рамок. Каждый блок — это группа вопросов одного сценария, которая
+ * целиком уезжает в следующую колонку, если не помещается в текущей
+ * (`break-inside: avoid` во вьюхе).
  */
-export type GroupedItem =
-  | { kind: "question"; data: FlatQuestion }
-  | { kind: "gap" };
+export type GroupedBlock = {
+  scenario: ScenarioName;
+  items: FlatQuestion[];
+};
 
-export const GROUPED_ITEMS: GroupedItem[] = SCENARIOS.flatMap((scenario, i) => {
-  const block: GroupedItem[] = QUESTIONS[scenario].map((q) => ({
-    kind: "question" as const,
-    data: { scenario, question: q, uid: `${scenario}::${q.key}` },
-  }));
-  return i < SCENARIOS.length - 1
-    ? [...block, { kind: "gap" as const }]
-    : block;
-});
+export const GROUPED_BLOCKS: GroupedBlock[] = SCENARIOS.map((scenario) => ({
+  scenario,
+  items: QUESTIONS[scenario].map((q) => ({
+    scenario,
+    question: q,
+    uid: `${scenario}::${q.key}`,
+  })),
+}));
