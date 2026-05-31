@@ -1,0 +1,47 @@
+.item {
+  border: none;
+  padding: 6px 10px 8px;
+  margin: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.text {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+  transition: color 120ms ease;
+}
+
+.item.active .text {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 2px 14px;
+  font-size: 13.5px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: color 120ms ease;
+}
+
+.item.active .option {
+  color: var(--color-text);
+}
+
+.item.inactive .option {
+  cursor: not-allowed;
+}
+
+.option input[type="radio"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  cursor: inherit;
+  accent-color: var(--color-button);
+}

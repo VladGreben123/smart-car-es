@@ -7,20 +7,23 @@
 .title {
   font-size: 22px;
   font-weight: 600;
-  margin: 0 0 24px;
+  margin: 0 0 20px;
   text-align: center;
 }
 
-.scenariosFrame {
+/* ── Селектор сценария ─────────────────────────────────────── */
+
+.scenarios {
   position: relative;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-surface);
-  padding: 24px 14px 14px;
-  margin-bottom: 18px;
+  padding: 18px 14px 12px;
+  margin-bottom: 14px;
 }
 
-.scenariosFrameLegend {
+.scenariosLegend,
+.questionsLegend {
   position: absolute;
   top: -10px;
   left: 16px;
@@ -30,28 +33,21 @@
   color: var(--color-text-muted);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.cell {
+.scenariosRow {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  justify-content: center;
 }
 
 .scenarioRadio {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  justify-content: center;
   font-weight: 600;
-  padding: 6px 10px;
+  padding: 4px 8px;
   cursor: pointer;
   user-select: none;
-  margin-bottom: 6px;
 }
 
 .scenarioRadio input {
@@ -60,6 +56,39 @@
   height: 16px;
   cursor: pointer;
 }
+
+/* ── Общая зона вопросов ───────────────────────────────────── */
+
+.questionsArea {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  padding: 22px 16px 16px;
+  margin-bottom: 18px;
+}
+
+/* Многоколоночный поток без визуального разделения групп.
+   Порядок вопросов задаётся в FLAT_QUESTIONS; здесь они просто
+   укладываются сверху вниз и переносятся в следующую колонку. */
+.questionsFlow {
+  column-count: 3;
+  column-gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .questionsFlow {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .questionsFlow {
+    column-count: 1;
+  }
+}
+
+/* ── Кнопка ────────────────────────────────────────────────── */
 
 .explainButton {
   display: block;
@@ -82,10 +111,4 @@
 .explainButton:disabled {
   background: var(--color-button-disabled);
   cursor: not-allowed;
-}
-
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
 }

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { ScenarioColumn } from "./components/ScenarioColumn";
+import { QuestionItem } from "./components/QuestionItem";
 import { TraceTable } from "./components/TraceTable";
 import { ANALYZERS, type AnalysisResult } from "./inference/analyzers";
+import { FLAT_QUESTIONS } from "./knowledge/layout";
 import {
   QUESTIONS,
   SCENARIOS,
@@ -32,11 +33,7 @@ export function App() {
   const handleScenarioChange = (next: ScenarioName) => {
     setChosen(next);
     setResult(null);
-    setAnswers((prev) => {
-      const cleared = emptyAnswers();
-      cleared[next] = prev[next];
-      return cleared;
-    });
+    setAnswers(emptyAnswers);
   };
 
   const handleAnswerChange = (
@@ -48,18 +45,6 @@ export function App() {
       ...prev,
       [scenario]: { ...prev[scenario], [questionKey]: label },
     }));
-  };
-
-  const handleExplain = () => {
-    if (!chosen) return;
-    const facts: string[] = [];
-    for (const question of QUESTIONS[chosen]) {
-      const selected = answers[chosen][question.key];
-      if (!selected) continue;
-      const option = question.options.find((o) => o.label === selected);
-      if (option?.fact) facts.push(option.fact);
-    }
-    setResult(ANALYZERS[chosen](facts));
   };
 
   const collectedFacts = useMemo(() => {
@@ -74,44 +59,56 @@ export function App() {
     return facts;
   }, [chosen, answers]);
 
+  const handleExplain = () => {
+    if (!chosen) return;
+    setResult(ANALYZERS[chosen](collectedFacts));
+  };
+
   return (
     <div className={styles.app}>
       <h1 className={styles.title}>Экспертная система «Умный автомобиль»</h1>
 
-      <section className={styles.scenariosFrame}>
-        <div className={styles.scenariosFrameLegend}>
-          Выберите дорожную ситуацию и ответьте на вопросы
+      <section className={styles.scenarios}>
+        <div className={styles.scenariosLegend}>
+          Выберите дорожную ситуацию
         </div>
+        <div className={styles.scenariosRow}>
+          {SCENARIOS.map((scenario) => (
+            <label
+              key={scenario}
+              className={styles.scenarioRadio}
+              title={SCENARIO_DESCRIPTIONS[scenario]}
+            >
+              <input
+                type="radio"
+                name="scenario"
+                value={scenario}
+                checked={chosen === scenario}
+                onChange={() => handleScenarioChange(scenario)}
+              />
+              <span>{scenario}</span>
+            </label>
+          ))}
+        </div>
+      </section>
 
-        <div className={styles.grid}>
-          {SCENARIOS.map((scenario) => {
-            const active = chosen === scenario;
+      <section className={styles.questionsArea}>
+        <div className={styles.questionsLegend}>Ответьте на вопросы</div>
+        <div className={styles.questionsFlow}>
+          {FLAT_QUESTIONS.map((item, idx) => {
+            const active = chosen === item.scenario;
+            const selected = answers[item.scenario][item.question.key];
             return (
-              <div key={scenario} className={styles.cell}>
-                <label
-                  className={styles.scenarioRadio}
-                  title={SCENARIO_DESCRIPTIONS[scenario]}
-                >
-                  <input
-                    type="radio"
-                    name="scenario"
-                    value={scenario}
-                    checked={active}
-                    onChange={() => handleScenarioChange(scenario)}
-                  />
-                  <span>{scenario}</span>
-                </label>
-
-                <ScenarioColumn
-                  scenario={scenario}
-                  questions={QUESTIONS[scenario]}
-                  answers={answers[scenario]}
-                  active={active}
-                  onAnswerChange={(qKey, label) =>
-                    handleAnswerChange(scenario, qKey, label)
-                  }
-                />
-              </div>
+              <QuestionItem
+                key={item.uid}
+                item={item}
+                index={idx}
+                active={active}
+                selected={selected}
+                onChange={(label) =>
+                  handleAnswerChange(item.scenario, item.question.key, label)
+                }
+              />
             );
           })}
         </div>
@@ -126,11 +123,7 @@ export function App() {
         Показать объяснение
       </button>
 
-      <TraceTable
-        scenario={chosen}
-        facts={collectedFacts}
-        result={result}
-      />
+      <TraceTable scenario={chosen} facts={collectedFacts} result={result} />
     </div>
   );
 }
